@@ -10,7 +10,7 @@ java {
 }
 
 application {
-    mainClass = 'ua.Main' // <-- your main class, e.g. 'ua.hotel.Main'
+    mainClass = 'ua.Main'
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -18,5 +18,9 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 tasks.withType(JavaExec).configureEach {
-    defaultCharacterEncoding = 'UTF-8'
+    jvmArgs = [
+        '-Dfile.encoding=UTF-8',
+        '-Dstdout.encoding=UTF-8',
+        '-Dstderr.encoding=UTF-8'
+    ]
 }

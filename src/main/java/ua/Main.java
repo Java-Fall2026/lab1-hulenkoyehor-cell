@@ -1,9 +1,9 @@
 package ua;
 
 import ua.fitness.model.Member;
+import ua.fitness.model.PassType;
+import ua.fitness.model.Specialty;
 import ua.fitness.model.Trainer;
-import ua.fitness.model.MembershipPass;
-import ua.fitness.model.WorkoutSession;
 import ua.fitness.util.FitnessUtils;
 
 import java.time.LocalDate;
@@ -13,73 +13,51 @@ public class Main {
     public static void main(String[] args) {
         System.setOut(new java.io.PrintStream(System.out, true, java.nio.charset.StandardCharsets.UTF_8));
 
-        System.out.println("=== 1. Створення об'єкта конструктором та фабричним методом ===");
+        System.out.println("=== 1. Створення record-об'єкта та звернення до компонентів ===");
         Member member = new Member("1234567890", "Єгор Гуленкой", LocalDate.of(2000, 5, 15));
-        Trainer trainer = new Trainer("TR-01", "Олександр Власенко", "yoga");
-        
-        MembershipPass pass = MembershipPass.of(
-            "PASS-100", member, "premium",
-            LocalDate.now().minusDays(5), LocalDate.now().plusDays(25), 1500.0
-        );
-        WorkoutSession session = WorkoutSession.of(trainer, pass, LocalDate.now(), 60);
+        Trainer trainer = new Trainer("TR-01", "Олександр Власенко", Specialty.YOGA);
+        System.out.println("ПІБ члена (через аксесор record): " + member.fullName());
+        System.out.println("ІПН члена (через аксесор record): " + member.taxId());
+        System.out.println("Спеціальність тренера (через аксесор record): " + trainer.specialty());
 
-        System.out.println("Член клубу: " + member);
-        System.out.println("Абонемент: " + pass);
+        System.out.println("\n=== 2. Enum у роботі: values(), власне поле та valueOf з try/catch ===");
+        System.out.println("Перелік усіх типів абонементів (values() та getPriceFactor()):");
+        for (PassType type : PassType.values()) {
+            System.out.println(" - " + type + " (коефіцієнт ціни: " + type.getPriceFactor() + ")");
+        }
 
-        System.out.println("\n=== 2. Нормалізація в дії ===");
-        System.out.println("Введено 'yoga' -> Отримано спеціальність: " + trainer.getSpecialty());
-        System.out.println("Введено 'premium' -> Отримано тип абонемента: " + pass.getType());
+        try {
+            System.out.println("\nСпроба зчитати неіснуючий enum через valueOf('UNKNOWN'):");
+            System.out.println(PassType.valueOf("UNKNOWN"));
+        } catch (IllegalArgumentException e) {
+            System.out.println("Перехоплено виняток для невідомого enum: " + e.getMessage());
+        }
 
-        System.out.println("\n=== 3. Три різні порушення правил валідації (try/catch) ===");
+        System.out.println("\n=== 3. Демонстрація обох switch-виразів ===");
+        PassType passType = PassType.PREMIUM;
+        String passDesc = FitnessUtils.getPassDescription(passType);
+        System.out.println("Switch 1 (по PassType): " + passType + " -> " + passDesc);
+
+        Specialty specialty = Specialty.CROSSFIT;
+        double bonus = FitnessUtils.calculateTrainerBonusMultiplier(specialty);
+        System.out.println("Switch 2 (по Specialty): " + specialty + " -> коефіцієнт бонусу: " + bonus);
+
+        System.out.println("\n=== 4. Record із невалідними даними (компактний конструктор) ===");
         try {
             new Member("999", "Іван", LocalDate.now().minusYears(10));
         } catch (IllegalArgumentException e) {
-            System.out.println("Помилка 1 (Вік < 16): " + e.getMessage());
+            System.out.println("Перехоплено виняток з компактного конструктора: " + e.getMessage());
         }
 
-        try {
-            WorkoutSession.of(trainer, pass, LocalDate.now(), 200);
-        } catch (IllegalArgumentException e) {
-            System.out.println("Помилка 2 (Тривалість > 180): " + e.getMessage());
-        }
+        System.out.println("\n=== 5. Порівняння двох однакових record-об'єктів (equals та hashCode) ===");
+        Member member1 = new Member("1234567890", "Єгор Гуленкой", LocalDate.of(2000, 5, 15), member.createdAt());
+        Member member2 = new Member("1234567890", "Єгор Гуленкой", LocalDate.of(2000, 5, 15), member.createdAt());
 
-        try {
-            new Trainer("TR-02", "  ", "GYM");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Помилка 3 (Порожнє ім'я): " + e.getMessage());
-        }
+        System.out.println("member1.equals(member2): " + member1.equals(member2));
+        System.out.println("hashCode однакові: " + (member1.hashCode() == member2.hashCode()));
 
-        System.out.println("\n=== 4. Спроба зіпсувати коректний об'єкт сеттером ===");
-        try {
-            pass.setPrice(-500.0);
-        } catch (IllegalArgumentException e) {
-            System.out.println("Невдала зміна ціни: " + e.getMessage());
-            System.out.println("Ціна залишилася: " + pass.getPrice());
-        }
-
-        System.out.println("\n=== 5. Порівняння об'єктів (==, equals, hashCode) ===");
-        Member memberSameKey = new Member("1234567890", "Інше Ім'я", LocalDate.of(1995, 1, 1));
-        Member memberDiffKey = new Member("0000000000", "Єгор Гуленкой", LocalDate.of(2000, 5, 15));
-
-        System.out.println("member == memberSameKey: " + (member == memberSameKey));
-        System.out.println("member.equals(memberSameKey): " + member.equals(memberSameKey));
-        System.out.println("hashCode однакові: " + (member.hashCode() == memberSameKey.hashCode()));
-        System.out.println("member.equals(memberDiffKey): " + member.equals(memberDiffKey));
-
-        System.out.println("\n=== 6. Виклик обчислювальних методів ===");
-        long days = FitnessUtils.passDurationDays(pass);
-        double dailyPrice = FitnessUtils.pricePerDay(pass);
-        System.out.println("Тривалість абонемента: " + days + " днів");
-        System.out.println("Вартість за день: " + String.format("%.2f грн", dailyPrice));
-
-        System.out.println("\n=== 7. Вивід усіх сутностей варіанта через toString() ===");
-        System.out.println(member);
-        System.out.println(trainer);
-        System.out.println(pass);
-        System.out.println(session);
-
-        System.out.println("\n=== 8. Закоментований код з помилкою компіляції ===");
-        // ValidationHelper.requireNotBlank("test", "field"); 
-        // MembershipPass badPass = new MembershipPass(...);
+        System.out.println("\n=== 6. Вивід record через згенерований toString() ===");
+        System.out.println("Record Member toString(): " + member);
+        System.out.println("Record Trainer toString(): " + trainer);
     }
 }

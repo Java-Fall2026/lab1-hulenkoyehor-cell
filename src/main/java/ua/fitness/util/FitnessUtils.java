@@ -1,36 +1,43 @@
 package ua.fitness.util;
 
 import ua.fitness.model.MembershipPass;
-import java.time.LocalDate;
+import ua.fitness.model.PassType;
+import ua.fitness.model.Specialty;
+
 import java.time.temporal.ChronoUnit;
 
 public class FitnessUtils {
-    public static final String[] ALLOWED_SPECIALTIES = {"YOGA", "CROSSFIT", "PILATES", "GYM"};
-    public static final String[] ALLOWED_PASS_TYPES = {"STANDARD", "PREMIUM", "VIP", "STUDENT"};
 
-    private FitnessUtils() {}
-
-    public static void validateNotNull(Object obj, String fieldName) { ValidationHelper.requireNotNull(obj, fieldName); }
-    public static void validateNotBlank(String value, String fieldName) { ValidationHelper.requireNotBlank(value, fieldName); }
-    public static void validatePositive(double value, String fieldName) { ValidationHelper.requirePositive(value, fieldName); }
-    public static void validateInRange(int value, int min, int max, String fieldName) { ValidationHelper.requireInRange(value, min, max, fieldName); }
-    public static void validateAtLeastAge(LocalDate birthDate, int minAge, String fieldName) { ValidationHelper.requireAtLeastAge(birthDate, minAge, fieldName); }
-    public static void validateDateAfter(LocalDate endDate, LocalDate startDate, String fieldName) { ValidationHelper.requireDateAfter(endDate, startDate, fieldName); }
-    public static void validateDateInRange(LocalDate date, LocalDate start, LocalDate end, String fieldName) { ValidationHelper.requireDateInRange(date, start, end, fieldName); }
-
-    public static String normalizeAndValidate(String value, String[] allowedValues, String fieldName) {
-        String normalized = FormatHelper.normalize(value);
-        ValidationHelper.requireInList(normalized, allowedValues, fieldName);
-        return normalized;
+    private FitnessUtils() {
     }
 
     public static long passDurationDays(MembershipPass pass) {
-        validateNotNull(pass, "pass");
+        ValidationHelper.requireNotNull(pass, "pass");
         return ChronoUnit.DAYS.between(pass.getStartDate(), pass.getEndDate()) + 1;
     }
 
     public static double pricePerDay(MembershipPass pass) {
+        ValidationHelper.requireNotNull(pass, "pass");
         long days = passDurationDays(pass);
         return pass.getPrice() / days;
+    }
+
+    public static String getPassDescription(PassType type) {
+        ValidationHelper.requireNotNull(type, "type");
+        return switch (type) {
+            case STANDARD -> "Стандартний доступ до тренажерного залу";
+            case STUDENT -> "Студентський абонемент зі знижкою";
+            case PREMIUM -> "Преміум доступ включає басейн та групові заняття";
+            case VIP -> "VIP доступ із персональним шафчиком та пріоритетом";
+        };
+    }
+
+    public static double calculateTrainerBonusMultiplier(Specialty specialty) {
+        ValidationHelper.requireNotNull(specialty, "specialty");
+        return switch (specialty) {
+            case YOGA, PILATES -> 1.15;
+            case CROSSFIT -> 1.30;
+            case GYM -> 1.05;
+        };
     }
 }

@@ -1,65 +1,85 @@
 package ua.fitness.model;
 
-import ua.common.BaseEntity;
-import ua.fitness.util.FitnessUtils;
-import java.time.LocalDate;
-import java.util.Objects;
+import ua.fitness.util.ValidationHelper;
 
-public class MembershipPass extends BaseEntity {
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+public class MembershipPass {
+
     private final String passCode;
     private final Member member;
-    private String type;
+    private final PassType type;
     private final LocalDate startDate;
     private final LocalDate endDate;
     private double price;
+    private final LocalDateTime createdAt;
 
-    private MembershipPass(String passCode, Member member, String type, LocalDate startDate, LocalDate endDate, double price) {
-        super();
-        FitnessUtils.validateNotBlank(passCode, "passCode");
-        FitnessUtils.validateNotNull(member, "member");
-        FitnessUtils.validateNotNull(startDate, "startDate");
-        FitnessUtils.validateDateAfter(endDate, startDate, "endDate");
+    private MembershipPass(String passCode, Member member, PassType type, LocalDate startDate, LocalDate endDate, double price, LocalDateTime createdAt) {
+        ValidationHelper.requireNotBlank(passCode, "passCode");
+        ValidationHelper.requireNotNull(member, "member");
+        ValidationHelper.requireNotNull(type, "type");
+        ValidationHelper.requireNotNull(startDate, "startDate");
+        ValidationHelper.requireNotNull(endDate, "endDate");
+        ValidationHelper.requireStrictlyAfter(endDate, startDate, "endDate");
+        ValidationHelper.requirePositive(price, "price");
 
-        this.passCode = passCode.trim();
+        this.passCode = passCode;
         this.member = member;
+        this.type = type;
         this.startDate = startDate;
         this.endDate = endDate;
-        setType(type);
-        setPrice(price);
+        this.price = price;
+        this.createdAt = createdAt != null ? createdAt : LocalDateTime.now();
     }
 
-    public static MembershipPass of(String passCode, Member member, String type, LocalDate startDate, LocalDate endDate, double price) {
-        return new MembershipPass(passCode, member, type, startDate, endDate, price);
+    public static MembershipPass of(String passCode, Member member, PassType type, LocalDate startDate, LocalDate endDate, double price) {
+        return new MembershipPass(passCode, member, type, startDate, endDate, price, LocalDateTime.now());
     }
 
-    public String getPassCode() { return passCode; }
-    public Member getMember() { return member; }
-    public String getType() { return type; }
-    public final void setType(String type) {
-        this.type = FitnessUtils.normalizeAndValidate(type, FitnessUtils.ALLOWED_PASS_TYPES, "type");
+    public String getPassCode() {
+        return passCode;
     }
 
-    public LocalDate getStartDate() { return startDate; }
-    public LocalDate getEndDate() { return endDate; }
-    public double getPrice() { return price; }
-    public final void setPrice(double price) {
-        FitnessUtils.validatePositive(price, "price");
+    public Member getMember() {
+        return member;
+    }
+
+    public PassType getType() {
+        return type;
+    }
+
+    public LocalDate getStartDate() {
+        return startDate;
+    }
+
+    public LocalDate getEndDate() {
+        return endDate;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public void setPrice(double price) {
+        ValidationHelper.requirePositive(price, "price");
         this.price = price;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        MembershipPass that = (MembershipPass) o;
-        return Objects.equals(passCode, that.passCode);
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
     @Override
-    public int hashCode() { return Objects.hash(passCode); }
-
-    @Override
     public String toString() {
-        return "MembershipPass{passCode='" + passCode + "', member=" + member.getFullName() + ", type='" + type + "', startDate=" + startDate + ", endDate=" + endDate + ", price=" + price + ", createdAt=" + createdAt + "}";
+        return "MembershipPass{" +
+                "passCode='" + passCode + '\'' +
+                ", member=" + member.fullName() +
+                ", type=" + type +
+                ", startDate=" + startDate +
+                ", endDate=" + endDate +
+                ", price=" + price +
+                ", createdAt=" + createdAt +
+                '}';
     }
 }
